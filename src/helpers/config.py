@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     
     FILE_ALLOWED_EXTENSIONS: list
     MAX_FILE_SIZE: int  # in MB
+    FILE_DEFAULT_CHUNK_SIZE: int  # in bytes
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
