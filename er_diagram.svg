@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="800" height="600" viewBox="0 0 800 600">
+  <style>
+    .entity {
+      fill: #f5f5f5;
+      stroke: #333;
+      stroke-width: 2;
+    }
+    .entity-title {
+      fill: #333;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      font-weight: bold;
+      text-anchor: middle;
+    }
+    .entity-attribute {
+      fill: #333;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      text-anchor: start;
+    }
+    .pk {
+      font-weight: bold;
+    }
+    .fk {
+      font-style: italic;
+    }
+    .relationship {
+      stroke: #333;
+      stroke-width: 2;
+      fill: none;
+    }
+    .cardinality {
+      fill: #333;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      text-anchor: middle;
+    }
+  </style>
+
+  <!-- Session Entity -->
+  <rect x="100" y="50" width="200" height="180" rx="5" ry="5" class="entity" />
+  <text x="200" y="75" class="entity-title">Session</text>
+  <line x1="100" y1="85" x2="300" y2="85" stroke="#333" stroke-width="1" />
+  <text x="110" y="105" class="entity-attribute pk">id: String (PK)</text>
+  <text x="110" y="125" class="entity-attribute">created_at: DateTime</text>
+  <text x="110" y="145" class="entity-attribute">title: String</text>
+  <text x="110" y="165" class="entity-attribute">user_id: String</text>
+  <text x="110" y="185" class="entity-attribute">system_prompt: Text</text>
+  <text x="110" y="205" class="entity-attribute">metadata: JSON</text>
+
+  <!-- Message Entity -->
+  <rect x="500" y="50" width="200" height="180" rx="5" ry="5" class="entity" />
+  <text x="600" y="75" class="entity-title">Message</text>
+  <line x1="500" y1="85" x2="700" y2="85" stroke="#333" stroke-width="1" />
+  <text x="510" y="105" class="entity-attribute pk">id: String (PK)</text>
+  <text x="510" y="125" class="entity-attribute fk">session_id: String (FK)</text>
+  <text x="510" y="145" class="entity-attribute">role: String</text>
+  <text x="510" y="165" class="entity-attribute">content: Text</text>
+  <text x="510" y="185" class="entity-attribute">created_at: DateTime</text>
+  <text x="510" y="205" class="entity-attribute">token_count: Integer</text>
+  <text x="510" y="225" class="entity-attribute fk">parent_message_id: String (FK)</text>
+
+  <!-- Retrieval Entity -->
+  <rect x="500" y="350" width="200" height="160" rx="5" ry="5" class="entity" />
+  <text x="600" y="375" class="entity-title">Retrieval</text>
+  <line x1="500" y1="385" x2="700" y2="385" stroke="#333" stroke-width="1" />
+  <text x="510" y="405" class="entity-attribute pk">id: String (PK)</text>
+  <text x="510" y="425" class="entity-attribute fk">message_id: String (FK)</text>
+  <text x="510" y="445" class="entity-attribute">source_type: String</text>
+  <text x="510" y="465" class="entity-attribute">source_id: String</text>
+  <text x="510" y="485" class="entity-attribute">score: Float</text>
+  <text x="510" y="505" class="entity-attribute">chunk: Text</text>
+
+  <!-- Summary Entity -->
+  <rect x="100" y="350" width="200" height="140" rx="5" ry="5" class="entity" />
+  <text x="200" y="375" class="entity-title">Summary</text>
+  <line x1="100" y1="385" x2="300" y2="385" stroke="#333" stroke-width="1" />
+  <text x="110" y="405" class="entity-attribute pk">id: String (PK)</text>
+  <text x="110" y="425" class="entity-attribute fk">session_id: String (FK)</text>
+  <text x="110" y="445" class="entity-attribute fk">up_to_message_id: String (FK)</text>
+  <text x="110" y="465" class="entity-attribute">summary: Text</text>
+  <text x="110" y="485" class="entity-attribute">created_at: DateTime</text>
+  <text x="110" y="505" class="entity-attribute">tokens_saved: Integer</text>
+
+  <!-- Relationships -->
+  <!-- Session to Message (1:N) -->
+  <path d="M 300 140 L 500 140" class="relationship" />
+  <text x="320" y="130" class="cardinality">1</text>
+  <text x="480" y="130" class="cardinality">N</text>
+
+  <!-- Session to Summary (1:N) -->
+  <path d="M 200 230 L 200 350" class="relationship" />
+  <text x="190" y="250" class="cardinality">1</text>
+  <text x="190" y="330" class="cardinality">N</text>
+
+  <!-- Message to Retrieval (1:N) -->
+  <path d="M 600 230 L 600 350" class="relationship" />
+  <text x="590" y="250" class="cardinality">1</text>
+  <text x="590" y="330" class="cardinality">N</text>
+
+  <!-- Message self-reference (parent-child) -->
+  <path d="M 700 140 C 730 140, 730 200, 700 200" class="relationship" />
+  <text x="720" y="130" class="cardinality">0,1</text>
+  <text x="720" y="210" class="cardinality">0,N</text>
+
+  <!-- Summary to Message (N:1) -->
+  <path d="M 300 430 C 400 430, 400 200, 500 200" class="relationship" />
+  <text x="320" y="420" class="cardinality">N</text>
+  <text x="480" y="190" class="cardinality">1</text>
+</svg>
