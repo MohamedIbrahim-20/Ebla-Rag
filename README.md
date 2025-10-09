@@ -57,12 +57,6 @@ The API provides endpoints for:
 
 See `API_ENDPOINTS.md` for detailed documentation.
 
-## Testing
-
-Run the test script to verify your setup:
-```bash
-python test_simple.py
-```
 
 ## Architecture
 
