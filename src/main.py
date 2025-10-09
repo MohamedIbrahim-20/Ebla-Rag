@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from routes import base, data
+from models.db import init_db
 app = FastAPI()
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
 
 app.include_router(base.base_router)
 
