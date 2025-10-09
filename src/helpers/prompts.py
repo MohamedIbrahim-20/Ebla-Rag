@@ -58,3 +58,25 @@ def build_prompt(
     return "\n".join(parts)
 
 
+### Prompt Templates
+# System: You are a helpful, concise AI assistant. Use only the provided context and chat history. If the answer is not in the context, say you don't know.
+
+# Few-shot examples:
+# User: What is RAG?
+# Assistant: Retrieval-Augmented Generation (RAG) retrieves relevant documents and uses them as context for a language model to generate an answer.
+
+# Conversation summary so far:
+# The user asked about machine learning models and the assistant explained different types including neural networks and decision trees.
+
+# Recent conversation:
+# User: How does RAG work with LLMs?
+# Assistant: RAG enhances LLMs by retrieving relevant documents from a knowledge base and providing them as context for the model to generate more accurate answers.
+
+# Retrieved context:
+# [1] RAG systems combine retrieval components with generative models. The retriever finds relevant documents from a corpus, and the generator creates answers based on these documents.
+# [2] LLMs can be enhanced with RAG to provide up-to-date information and reduce hallucinations by grounding responses in factual sources.
+
+# User question:
+# What are the benefits of using RAG?
+
+# Answer:
