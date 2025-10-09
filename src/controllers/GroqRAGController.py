@@ -189,6 +189,11 @@ class GroqRAGController(BaseController):
                     self.embeddings,
                     allow_dangerous_deserialization=True
                 )
+                # Add new documents to existing index instead of overwriting
+                if chunks:
+                    logger.info(f"Adding {len(chunks)} new chunks to existing index")
+                    self.vectorstore.add_documents(chunks)
+                    self.vectorstore.save_local(self.LANGCHAIN_DB_PATH)
             else:
                 logger.info(f"Creating new vector store at {self.LANGCHAIN_DB_PATH}")
                 os.makedirs(os.path.dirname(self.LANGCHAIN_DB_PATH), exist_ok=True)

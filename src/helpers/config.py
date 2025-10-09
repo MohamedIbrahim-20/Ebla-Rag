@@ -13,9 +13,9 @@ class Settings(BaseSettings):
     # RAG Configuration
     DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
     DEFAULT_EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
-    DEFAULT_CHUNK_SIZE: int = 1000
-    DEFAULT_CHUNK_OVERLAP: int = 100
-    DEFAULT_TOP_K: int = 5
+    DEFAULT_CHUNK_SIZE: int = 500  # Smaller chunks for better granularity
+    DEFAULT_CHUNK_OVERLAP: int = 150  # More overlap to avoid missing context
+    DEFAULT_TOP_K: int = 10  # Retrieve more documents for better coverage
     
     # Groq API Configuration
     GROQ_API_KEY: str = ""

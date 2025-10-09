@@ -14,8 +14,8 @@ chat_router = APIRouter(
     tags=["api_v1", "chat"],
 )
 
-SUMMARY_THRESHOLD_MESSAGES = 12  # when total messages exceed this, attempt summarization
-SUMMARY_BATCH_SIZE = 10          # how many oldest messages to compress per pass
+SUMMARY_THRESHOLD_MESSAGES = 5  # when total messages exceed this, attempt summarization
+SUMMARY_BATCH_SIZE = 4          # how many oldest messages to compress per pass
 RECENT_KEEP = 4                  # keep this many most-recent messages verbatim
 
 
