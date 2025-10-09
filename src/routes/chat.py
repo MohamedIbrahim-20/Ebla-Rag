@@ -14,6 +14,10 @@ chat_router = APIRouter(
     tags=["api_v1", "chat"],
 )
 
+SUMMARY_THRESHOLD_MESSAGES = 12  # when total messages exceed this, attempt summarization
+SUMMARY_BATCH_SIZE = 10          # how many oldest messages to compress per pass
+RECENT_KEEP = 4                  # keep this many most-recent messages verbatim
+
 
 def _get_or_create_session(db, system_prompt: Optional[str]) -> str:
     sess = DBSess(system_prompt=system_prompt)
@@ -39,6 +43,85 @@ def _get_recent_messages(db, session_id: str, limit: int = 8) -> List[dict]:
     # reverse to chronological
     msgs = list(reversed(msgs))
     return [{"role": m.role, "content": m.content} for m in msgs]
+
+
+def _maybe_summarize(db, session_id: str, rag: GroqRAGController) -> None:
+    """Create/append a rolling summary when history grows.
+    Strategy:
+      - Keep the last RECENT_KEEP messages verbatim
+      - Summarize a batch of older messages (oldest first) when total > threshold
+    """
+    # total messages
+    total_msgs = db.query(DBMsg).filter(DBMsg.session_id == session_id).count()
+    if total_msgs <= SUMMARY_THRESHOLD_MESSAGES:
+        return
+
+    # find latest summary cutoff
+    latest_sum: Optional[DBSum] = (
+        db.query(DBSum)
+        .filter(DBSum.session_id == session_id)
+        .order_by(DBSum.created_at.desc())
+        .first()
+    )
+
+    # messages ordered asc
+    all_msgs = (
+        db.query(DBMsg)
+        .filter(DBMsg.session_id == session_id)
+        .order_by(DBMsg.created_at.asc())
+        .all()
+    )
+
+    if not all_msgs:
+        return
+
+    # Determine start index after last summarized message
+    start_idx = 0
+    if latest_sum:
+        # find index of up_to_message_id
+        for i, m in enumerate(all_msgs):
+            if m.id == latest_sum.up_to_message_id:
+                start_idx = i + 1
+                break
+
+    # Leave most recent RECENT_KEEP messages unsummarized
+    cutoff_idx = max(0, len(all_msgs) - RECENT_KEEP)
+    # Select the next batch to summarize
+    batch = all_msgs[start_idx: min(start_idx + SUMMARY_BATCH_SIZE, cutoff_idx)]
+    if not batch:
+        return
+
+    # Build plain text of the batch
+    convo_text = []
+    for m in batch:
+        role = m.role.capitalize()
+        convo_text.append(f"{role}: {m.content}")
+    convo_str = "\n".join(convo_text)
+
+    # Summarization prompt (concise, factual)
+    sum_prompt = (
+        "Summarize the following conversation turns concisely and factually so it can replace them in future context.\n"
+        "Do not add new information; preserve key facts and decisions.\n\n" + convo_str + "\n\nSummary:"
+    )
+
+    try:
+        if rag.llm is None:
+            # ensure models
+            if not rag.initialize_models():
+                return
+        resp = rag.llm.invoke(sum_prompt)
+        summary_text = getattr(resp, "content", None)
+        if not summary_text:
+            return
+
+        up_to_msg = batch[-1]
+        new_sum = DBSum(session_id=session_id, up_to_message_id=up_to_msg.id, summary=summary_text)
+        db.add(new_sum)
+        db.commit()
+    except Exception:
+        db.rollback()
+        # soft-fail summarization
+        return
 
 
 @chat_router.post("/chat")
@@ -109,6 +192,9 @@ def chat(req: ChatRequest, app_settings: Settings = Depends(get_settings)):
         if to_insert:
             db.add_all(to_insert)
             db.commit()
+
+        # summarization pass (rolling)
+        _maybe_summarize(db, session_id, rag)
 
         return JSONResponse(status_code=200, content={
             "session_id": session_id,
