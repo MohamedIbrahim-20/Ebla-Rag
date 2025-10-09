@@ -1,12 +1,12 @@
 from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
 from fastapi.responses import JSONResponse
 from helpers.config import get_settings, Settings
-from controllers import DataController, ProjectController, ProcessController
+from controllers import DataController, ProjectController, ProcessController, GroqRAGController
 from models import ResponseStatus
 import os
 import aiofiles
 import logging
-from .schemes.data import ProcessRequest
+from .schemes.data import ProcessRequest, IndexRequest, SearchRequest, AskRequest
 
 
 logger = logging.getLogger('uvicorn.error')
@@ -50,3 +50,166 @@ async def process_endpoint(project_id: str, request: ProcessRequest):
     #                     content={"message": ResponseStatus.PROCESSING_SUCCESS.value,
     #                                                             "chunks": file_chunks})
     return file_chunks
+
+
+# RAG Endpoints
+@data_router.post("/index/{project_id}")
+async def index_documents(project_id: str, request: IndexRequest, app_settings: Settings = Depends(get_settings)):
+    """Index documents from CSV file for RAG"""
+    try:
+        rag_controller = GroqRAGController(project_id=project_id, settings=app_settings)
+        # Initialize models
+        if not rag_controller.initialize_models():
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"error": "Failed to initialize models. Check GROQ_API_KEY."}
+            )
+        
+        # Index documents
+        print("test")
+        success = rag_controller.index_documents(request.csv_file)
+        
+        if success:
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content={
+                    "message": "Documents indexed successfully",
+                    "project_id": project_id,
+                    "csv_file": request.csv_file
+                }
+            )
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"error": "Failed to index documents"}
+            )
+            
+    except Exception as e:
+        logger.error(f"Error indexing documents: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)}
+        )
+
+@data_router.post("/search/{project_id}")
+async def search_documents(project_id: str, request: SearchRequest, app_settings: Settings = Depends(get_settings)):
+    """Search for relevant documents"""
+    try:
+        rag_controller = GroqRAGController(project_id=project_id, settings=app_settings)
+        
+        # Initialize models
+        if not rag_controller.initialize_models():
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"error": "Failed to initialize models. Check GROQ_API_KEY."}
+            )
+        
+        # Check if index exists based on method
+        if request.method == "langchain":
+            if not os.path.exists(rag_controller.LANGCHAIN_DB_PATH):
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content={"error": "No LangChain index found. Please run /index endpoint first."}
+                )
+        elif request.method == "llamaindex":
+            if not os.path.exists(rag_controller.LLAMAINDEX_DB_PATH):
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content={"error": "No LlamaIndex found. Please run /index endpoint first."}
+                )
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"error": "Invalid method. Use 'langchain' or 'llamaindex'"}
+            )
+        
+        # Search documents
+        results = rag_controller.search_documents(request.query, request.method)
+        
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "query": request.query,
+                "method": request.method,
+                "results": results,
+                "total_results": len(results)
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error searching documents: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)}
+        )
+
+@data_router.post("/ask/{project_id}")
+async def ask_question(project_id: str, request: AskRequest, app_settings: Settings = Depends(get_settings)):
+    """Ask a question using RAG (Retrieval-Augmented Generation)"""
+    try:
+        rag_controller = GroqRAGController(project_id=project_id, settings=app_settings)
+        
+        # Initialize models
+        if not rag_controller.initialize_models():
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"error": "Failed to initialize models. Check GROQ_API_KEY."}
+            )
+        
+        # Check if index exists based on method
+        if request.method == "langchain":
+            if not os.path.exists(rag_controller.LANGCHAIN_DB_PATH):
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content={"error": "No LangChain index found. Please run /index endpoint first."}
+                )
+            result = rag_controller.ask_question_langchain(request.question)
+        elif request.method == "llamaindex":
+            if not os.path.exists(rag_controller.LLAMAINDEX_DB_PATH):
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content={"error": "No LlamaIndex found. Please run /index endpoint first."}
+                )
+            result = rag_controller.ask_question_llamaindex(request.question)
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"error": "Invalid method. Use 'langchain' or 'llamaindex'"}
+            )
+        
+        if "error" in result:
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content=result
+            )
+        
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=result
+        )
+        
+    except Exception as e:
+        logger.error(f"Error asking question: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)}
+        )
+
+@data_router.get("/status/{project_id}")
+async def get_rag_status(project_id: str, app_settings: Settings = Depends(get_settings)):
+    """Get RAG system status"""
+    try:
+        rag_controller = GroqRAGController(project_id=project_id, settings=app_settings)
+        status_info = rag_controller.get_system_status()
+        
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content=status_info
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting status: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)}
+        )
