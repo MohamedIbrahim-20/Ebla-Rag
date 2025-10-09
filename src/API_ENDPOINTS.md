@@ -117,6 +117,69 @@ Ask questions using RAG (Retrieval-Augmented Generation).
 }
 ```
 
+### 5. Chat (Context-Aware with History)
+**POST** `/api/v1/chat`
+
+Create or continue a session; uses history + (optional) rolling summary + RAG to answer.
+
+**Request Body (new session):**
+```json
+{
+  "message": "Who invented the transistor and when?",
+  "method": "langchain"
+}
+```
+
+**Request Body (continue existing session):**
+```json
+{
+  "session_id": "<paste-session-id>",
+  "message": "Summarize it in one sentence.",
+  "method": "langchain"
+}
+```
+
+**Response:**
+```json
+{
+  "session_id": "...",
+  "answer": "...",
+  "retrieved_documents": [ { "content": "...", "metadata": {"id": "..."}, "score": 0.87 } ]
+}
+```
+
+Notes:
+- Retrieval method can be "langchain" or "llamaindex".
+- A rolling summary is created automatically when sessions grow; summary is reused in future prompts.
+
+### 6. Get Chat History
+**GET** `/api/v1/history/{session_id}`
+
+Returns session messages (ordered) and latest summary (if any).
+
+**Response:**
+```json
+{
+  "session_id": "...",
+  "summary": "Compact summary of earlier turns or null",
+  "messages": [
+    {"id": "...", "role": "user", "content": "...", "created_at": "..."},
+    {"id": "...", "role": "assistant", "content": "...", "created_at": "..."}
+  ]
+}
+```
+
+## Postman Collection
+
+An importable collection is available at `src/postman_collection.json`.
+
+Recommended order:
+1. Status
+2. Index CSV (run once)
+3. Chat (new session)
+4. Chat (continue session)
+5. History
+
 ### 5. File Upload
 **POST** `/api/v1/data/upload/{project_id}`
 

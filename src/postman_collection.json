@@ -1,0 +1,127 @@
+{
+  "info": {
+    "name": "Ebla-RAG API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection for indexing, search, ask, chat, and history"
+  },
+  "item": [
+    {
+      "name": "Status",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:5000/api/v1/data/status/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","v1","data","status","2"]
+        }
+      }
+    },
+    {
+      "name": "Index CSV",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"csv_file\": \"tech_100_long_real.csv\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/v1/data/index/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","v1","data","index","2"]
+        }
+      }
+    },
+    {
+      "name": "Search (LangChain)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"transistor invention\",\n  \"method\": \"langchain\",\n  \"top_k\": 5\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/v1/data/search/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","v1","data","search","2"]
+        }
+      }
+    },
+    {
+      "name": "Ask (LangChain)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"Who invented the transistor and when?\",\n  \"method\": \"langchain\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/v1/data/ask/2",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","v1","data","ask","2"]
+        }
+      }
+    },
+    {
+      "name": "Chat (new session)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Who invented the transistor and when?\",\n  \"method\": \"langchain\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/v1/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","v1","chat"]
+        }
+      }
+    },
+    {
+      "name": "Chat (continue session)",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"session_id\": \"<paste-session-id>\",\n  \"message\": \"Summarize it in one sentence.\",\n  \"method\": \"langchain\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/v1/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","v1","chat"]
+        }
+      }
+    },
+    {
+      "name": "History",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:5000/api/v1/history/<session_id>",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api","v1","history","<session_id>"]
+        }
+      }
+    }
+  ]
+}
+
+
