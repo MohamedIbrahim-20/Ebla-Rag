@@ -3,7 +3,7 @@ from typing import List, Optional
 
 DEFAULT_SYSTEM_PROMPT = (
     "You are a helpful, concise AI assistant. Use only the provided context and chat history. "
-    "If the answer is not in the context, say you don't know."
+    # "If the answer is not in the context, say you don't know."
 )
 
 

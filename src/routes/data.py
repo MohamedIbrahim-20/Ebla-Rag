@@ -66,7 +66,7 @@ async def index_documents(project_id: str, request: IndexRequest, app_settings: 
             )
         
         # Index documents
-        print("test")
+        # print("test")
         success = rag_controller.index_documents(request.csv_file)
         
         if success:

@@ -164,9 +164,9 @@ def chat(req: ChatRequest, app_settings: Settings = Depends(get_settings)):
         # generate answer (using LangChain path via GroqRAGController.ask_question_langchain)
         # we already have retrieved docs; reuse RAG generation to keep behavior consistent
         if method == "langchain":
-            answer_payload = rag.ask_question_langchain(req.message)
+            answer_payload = rag.ask_question_langchain(prompt)
         else:
-            answer_payload = rag.ask_question_llamaindex(req.message)
+            answer_payload = rag.ask_question_llamaindex(prompt)
         if "error" in answer_payload:
             return JSONResponse(status_code=500, content=answer_payload)
 

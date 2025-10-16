@@ -382,7 +382,7 @@ QUESTION: {question}
 ANSWER:"""
             
             # Generate answer
-            response = self.llm.invoke(prompt)
+            response = self.llm.invoke(question)
             answer = response.content
             
             return {
