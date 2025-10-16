@@ -19,7 +19,6 @@ class Session(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     user_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    system_prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     session_metadata: Mapped[Optional[dict]] = mapped_column("metadata", SQLITE_JSON, nullable=True)
 
     messages: Mapped[List["Message"]] = relationship("Message", back_populates="session", cascade="all, delete-orphan")

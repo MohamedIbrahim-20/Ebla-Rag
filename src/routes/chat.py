@@ -19,8 +19,8 @@ SUMMARY_BATCH_SIZE = 4          # how many oldest messages to compress per pass
 RECENT_KEEP = 4                  # keep this many most-recent messages verbatim
 
 
-def _get_or_create_session(db, system_prompt: Optional[str]) -> str:
-    sess = DBSess(system_prompt=system_prompt)
+def _get_or_create_session(db) -> str:
+    sess = DBSess()
     db.add(sess)
     db.commit()
     db.refresh(sess)
@@ -140,7 +140,7 @@ def chat(req: ChatRequest, app_settings: Settings = Depends(get_settings)):
         # session resolution
         session_id = req.session_id
         if not session_id:
-            session_id = _get_or_create_session(db, system_prompt=None)
+            session_id = _get_or_create_session(db)
             
         # If create_only is True, just return the session ID without processing a message
         if create_only:
@@ -163,10 +163,7 @@ def chat(req: ChatRequest, app_settings: Settings = Depends(get_settings)):
         retrieved_chunks = [r.get("content", "") for r in results]
 
         # prompt build
-        # load session for system_prompt
-        session_row = db.query(DBSess).filter(DBSess.id == session_id).first()
-        system_prompt = session_row.system_prompt if session_row and session_row.system_prompt else None
-        prompt = build_prompt(system_prompt, latest_summary, recent_messages, retrieved_chunks, req.message)
+        prompt = build_prompt(None, latest_summary, recent_messages, retrieved_chunks, req.message)
 
         # generate answer (using LangChain path via GroqRAGController.ask_question_langchain)
         # we already have retrieved docs; reuse RAG generation to keep behavior consistent
