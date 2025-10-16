@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ebla-RAG Chat</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Ebla-RAG: Context-Aware Chat</h1>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="app-container">
+            <!-- Sessions Panel -->
+            <div class="sessions-panel">
+                <div class="sessions-header">
+                    <h3>Sessions</h3>
+                    <button id="new-chat-btn" class="btn btn-primary btn-sm">New Chat</button>
+                </div>
+                <div id="sessions-list" class="sessions-list">
+                    <!-- Sessions will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Chat Panel -->
+            <div class="chat-panel">
+                <div class="chat-header">
+                    <h3>Chat</h3>
+                </div>
+                <div id="summary-container" class="chat-summary">
+                    <!-- Summary will be shown here when available -->
+                </div>
+                <div id="messages-container" class="chat-messages">
+                    <!-- Messages will be loaded here -->
+                </div>
+                <div id="loading-indicator" class="loading">
+                    <div class="spinner"></div>
+                    <p>Processing...</p>
+                </div>
+                <form id="message-form" class="chat-input">
+                    <textarea id="message-input" placeholder="Type your message here..." required></textarea>
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+
+            <!-- Context Panel -->
+            <div class="context-panel">
+                <div class="context-header">
+                    <h3>Retrieved Documents</h3>
+                </div>
+                <div id="context-content" class="context-content">
+                    <!-- Retrieved documents will be shown here -->
+                    <div class="context-placeholder">
+                        Ask a question to see relevant documents here.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/chat.js"></script>
+</body>
+</html>

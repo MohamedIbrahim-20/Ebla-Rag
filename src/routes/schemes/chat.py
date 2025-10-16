@@ -7,5 +7,6 @@ class ChatRequest(BaseModel):
     message: str
     method: Optional[str] = "langchain"  # or "llamaindex"
     temperature: Optional[float] = None
+    create_only: Optional[bool] = False
 
 

@@ -172,11 +172,14 @@ class GroqRAGController(BaseController):
     def create_langchain_index(self, documents: List[Document]) -> bool:
         """Create or load LangChain FAISS index"""
         try:
-            # Split documents into chunks
+            # Split documents into chunks with improved separators
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=self.CHUNK_SIZE,
                 chunk_overlap=self.CHUNK_OVERLAP,
-                separators=["\n\n", "\n", ".", " ", ""]
+                separators=["\n\n", "\n", ". ", "! ", "? ", "; ", ": ", " ", ""],
+                length_function=len,
+                is_separator_regex=False,
+                keep_separator=True
             )
             chunks = text_splitter.split_documents(documents)
             logger.info(f"Split into {len(chunks)} chunks")
@@ -283,19 +286,23 @@ class GroqRAGController(BaseController):
                     )
                 
                 if self.vectorstore:
-                    retriever = self.vectorstore.as_retriever(
-                        search_type="similarity",
-                        search_kwargs={"k": self.TOP_K_RESULTS}
+                    # Use similarity search with score for better ranking
+                    relevant_docs_with_scores = self.vectorstore.similarity_search_with_score(
+                        query, k=self.TOP_K_RESULTS
                     )
-                    relevant_docs = retriever.invoke(query)
                     
                     results = []
-                    for doc in relevant_docs:
+                    for doc, score in relevant_docs_with_scores:
+                        # Lower score means higher similarity in FAISS
+                        similarity_score = 1.0 / (1.0 + score)  # Convert to 0-1 range
                         results.append({
                             "content": doc.page_content,
                             "metadata": doc.metadata,
-                            "score": getattr(doc, 'score', 0.0)
+                            "score": similarity_score
                         })
+                    
+                    # Sort by score descending (highest similarity first)
+                    results.sort(key=lambda x: x["score"], reverse=True)
                     return results
                 else:
                     logger.error("LangChain vectorstore not available")

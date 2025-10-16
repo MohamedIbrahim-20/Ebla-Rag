@@ -32,7 +32,7 @@ def _get_latest_summary(db, session_id: str) -> Optional[str]:
     return q.summary if q else None
 
 
-def _get_recent_messages(db, session_id: str, limit: int = 8) -> List[dict]:
+def _get_recent_messages(db, session_id: str, limit: int = 15) -> List[dict]:
     msgs = (
         db.query(DBMsg)
         .filter(DBMsg.session_id == session_id)
@@ -126,8 +126,11 @@ def _maybe_summarize(db, session_id: str, rag: GroqRAGController) -> None:
 
 @chat_router.post("/chat")
 def chat(req: ChatRequest, app_settings: Settings = Depends(get_settings)):
-    if not req.message or not req.message.strip():
+    # Allow empty message only if create_only is True
+    create_only = getattr(req, 'create_only', False)
+    if not create_only and (not req.message or not req.message.strip()):
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"error": "message is required"})
+    
     method = req.method or "langchain"
     if method not in ("langchain", "llamaindex"):
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"error": "invalid method"})
@@ -138,6 +141,10 @@ def chat(req: ChatRequest, app_settings: Settings = Depends(get_settings)):
         session_id = req.session_id
         if not session_id:
             session_id = _get_or_create_session(db, system_prompt=None)
+            
+        # If create_only is True, just return the session ID without processing a message
+        if create_only:
+            return JSONResponse(status_code=200, content={"session_id": session_id})
 
         # persist user turn
         user_msg = DBMsg(session_id=session_id, role="user", content=req.message)
@@ -202,6 +209,49 @@ def chat(req: ChatRequest, app_settings: Settings = Depends(get_settings)):
             "retrieved_documents": results,
         })
 
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"error": str(e)})
+    finally:
+        db.close()
+
+
+@chat_router.get("/sessions")
+def get_sessions(app_settings: Settings = Depends(get_settings)):
+    db = SessionLocal()
+    try:
+        sessions = db.query(DBSess).order_by(DBSess.created_at.desc()).all()
+        payload = {
+            "sessions": [{"id": s.id, "created_at": s.created_at.isoformat()} for s in sessions]
+        }
+        return JSONResponse(status_code=200, content=payload)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+    finally:
+        db.close()
+
+
+@chat_router.delete("/session/{session_id}")
+def delete_session(session_id: str, app_settings: Settings = Depends(get_settings)):
+    """Delete a specific chat session and all its messages."""
+    db = SessionLocal()
+    try:
+        # Find the session
+        session = db.query(DBSess).filter(DBSess.id == session_id).first()
+        if not session:
+            return JSONResponse(status_code=404, content={"error": "Session not found"})
+        
+        # Delete all messages associated with this session
+        db.query(DBMsg).filter(DBMsg.session_id == session_id).delete()
+        
+        # Delete all summaries associated with this session
+        db.query(DBSum).filter(DBSum.session_id == session_id).delete()
+        
+        # Delete the session itself
+        db.delete(session)
+        db.commit()
+        
+        return JSONResponse(status_code=200, content={"message": "Session deleted successfully"})
     except Exception as e:
         db.rollback()
         return JSONResponse(status_code=500, content={"error": str(e)})

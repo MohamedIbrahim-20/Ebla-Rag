@@ -2,8 +2,10 @@ from typing import List, Optional
 
 
 DEFAULT_SYSTEM_PROMPT = (
-    "You are a helpful, concise AI assistant. Use only the provided context and chat history. "
-    # "If the answer is not in the context, say you don't know."
+    "You are a helpful, concise AI assistant. Use the provided context and chat history. "
+    "Pay special attention to personal information shared by the user (such as names, preferences, and background). "
+    "Remember and refer to this information in future responses when relevant. "
+    "If the answer is not in the context, say you don't know."
 )
 
 
@@ -14,6 +16,10 @@ FEW_SHOT_EXAMPLES = [
             "Retrieval-Augmented Generation (RAG) retrieves relevant documents and uses them as context "
             "for a language model to generate an answer."
         ),
+    },
+    {
+        "user": "My name is Alex and I'm interested in machine learning.",
+        "assistant": "Nice to meet you, Alex! I'll remember that you're interested in machine learning. What specific aspects of machine learning would you like to explore?"
     },
 ]
 
