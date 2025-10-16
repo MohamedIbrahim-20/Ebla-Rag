@@ -80,8 +80,8 @@ print(resp.json())
 
 ### Index a CSV Document
 ```python
-resp = requests.post('http://localhost:8000/api/v1/data/index/science', files={
-    "file": open("test_data/science_dataset.csv", "rb")
+resp = requests.post('http://localhost:8000/api/v1/data/index/science', json={
+    "csv_file": "science_dataset.csv"
 })
 print(resp.json())
 ```
